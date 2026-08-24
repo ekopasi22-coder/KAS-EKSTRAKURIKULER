@@ -258,6 +258,9 @@
                     <button id="btn-manage-treasurer" onclick="openManageTreasurerModal()" class="hidden text-xs font-bold bg-teal-600 hover:bg-teal-700 text-white px-2.5 py-1 rounded-lg transition-all shadow-sm">
                         <i class="fas fa-user-gear mr-1"></i> Kelola Bendahara
                     </button>
+                <button id="btn-manage-users" onclick="openManageUsersModal()" class="hidden bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-3 py-1.5 rounded-lg shadow-sm">
+                    <i class="fas fa-user-lock mr-1"></i> User Bendahara
+                </button>
                     <button id="btn-change-pin" onclick="openChangePinModal()" class="hidden text-xs font-semibold bg-amber-200 hover:bg-amber-300 text-amber-900 px-2.5 py-1 rounded-lg transition-all border border-amber-400">
                         <i class="fas fa-key mr-1"></i> Ganti PIN
                     </button>
@@ -457,19 +460,19 @@
                     <i class="fas fa-user-shield"></i>
                 </div>
                 <h3 class="text-lg font-display font-semibold text-slate-800">Verifikasi Pengurus</h3>
-                <p class="text-xs text-slate-500 mt-1">Masukkan email akun pengurus dan password Firebase.</p>
+                <p class="text-xs text-slate-500 mt-1">Masukkan User ID dan Password pengurus.</p>
             </div>
             <div class="space-y-3">
                 <div>
-                    <label class="block text-xs font-semibold text-slate-600 mb-1">Email Akun Pengurus</label>
-                    <input type="text" id="id-input" placeholder="Masukkan email akun Firebase" class="w-full border border-slate-300 rounded-lg p-2.5 text-center text-sm font-semibold focus:ring-2 focus:ring-amber-500 outline-none">
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">User ID</label>
+                    <input type="text" id="id-input" placeholder="Masukkan User ID" class="w-full border border-slate-300 rounded-lg p-2.5 text-center text-sm font-semibold focus:ring-2 focus:ring-amber-500 outline-none">
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-slate-600 mb-1">Password Firebase</label>
                     <input type="password" id="pin-input" placeholder="Masukkan password" class="w-full border border-slate-300 rounded-lg p-2.5 text-center text-lg tracking-widest font-mono focus:ring-2 focus:ring-amber-500 outline-none">
                 </div>
-                <p id="login-error" class="text-xs text-rose-600 hidden text-center font-bold">⚠️ Email/password tidak valid atau akun belum diberi hak akses!</p>
-                <p class="text-[11px] text-slate-400 text-center">Akun pengurus harus dibuat terlebih dahulu di Firebase Authentication > Users. Hak akses ditentukan oleh UID Firebase, bukan oleh JavaScript di halaman.</p>
+                <p id="login-error" class="text-xs text-rose-600 hidden text-center font-bold">⚠️ User ID/password salah atau akun belum diberi hak akses.</p>
+                <p class="text-[11px] text-slate-400 text-center">User Bendahara dibuat dari menu aplikasi oleh Admin Utama. Hak akses database tetap ditentukan Firebase Rules berdasarkan UID.</p>
             </div>
             <div class="flex gap-2">
                 <button onclick="closeModal()" class="w-1/2 bg-slate-100 hover:bg-slate-200 text-slate-600 font-semibold py-2 rounded-lg text-sm">Batal</button>
@@ -495,6 +498,36 @@
             <div class="flex gap-2">
                 <button onclick="closeManageTreasurerModal()" class="w-1/2 bg-slate-100 hover:bg-slate-200 text-slate-600 font-semibold py-2 rounded-lg text-sm">Tutup</button>
                 <button onclick="saveTreasurers()" class="w-1/2 bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 rounded-lg text-sm">Simpan Perubahan</button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Modal Kelola User Bendahara -->
+    <div id="manage-users-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden flex justify-center items-center z-50 p-4">
+        <div class="bg-white rounded-2xl shadow-elegant-lg border border-slate-200/70 p-6 max-w-lg w-full space-y-4">
+            <div class="text-center">
+                <div class="bg-indigo-100 text-indigo-700 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-2 text-xl">
+                    <i class="fas fa-user-lock"></i>
+                </div>
+                <h3 class="text-lg font-display font-semibold text-slate-800">Kelola User Bendahara</h3>
+                <p class="text-xs text-slate-500 mt-1">Buat User ID + Password langsung dari aplikasi. Akun disimpan di Firebase Authentication.</p>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <input id="new-user-id" class="border border-slate-300 rounded-lg p-2.5 text-sm" placeholder="User ID, contoh: BEND001">
+                <input id="new-user-name" class="border border-slate-300 rounded-lg p-2.5 text-sm" placeholder="Nama Bendahara">
+                <input id="new-user-password" type="password" class="border border-slate-300 rounded-lg p-2.5 text-sm" placeholder="Password (min. 6 karakter)">
+                <button onclick="createBendaharaUser()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg text-sm px-3 py-2.5">
+                    <i class="fas fa-user-plus mr-1"></i> Buat User
+                </button>
+            </div>
+            <p id="user-manager-msg" class="text-xs hidden text-center font-bold"></p>
+            <div class="border border-slate-200 rounded-lg overflow-hidden">
+                <div class="bg-slate-50 px-3 py-2 text-xs font-bold text-slate-600">Daftar User Bendahara</div>
+                <div id="user-manager-list" class="max-h-52 overflow-y-auto divide-y divide-slate-100"></div>
+            </div>
+            <div class="flex justify-end">
+                <button onclick="closeManageUsersModal()" class="bg-slate-200 text-slate-700 font-bold text-xs px-4 py-2 rounded-lg">Tutup</button>
             </div>
         </div>
     </div>
@@ -741,32 +774,38 @@
         }
 
         async function verifyPin() {
-            const inputEmail = document.getElementById('id-input').value.trim();
+            const inputUserId = document.getElementById('id-input').value.trim().toUpperCase();
             const inputPassword = document.getElementById('pin-input').value;
             const loginError = document.getElementById('login-error');
 
             try {
-                const user = await loginFirebasePengurus(inputEmail, inputPassword);
+                const user = await loginFirebasePengurus(inputUserId, inputPassword);
+                const authorized = await getAuthorizedUsers();
 
-                // Keputusan hak akses utama dibuat berdasarkan UID Firebase,
-                // bukan variabel JavaScript yang bisa diubah melalui Inspect.
-                if (!user || user.uid !== ADMIN_UID) {
-                    await firebase.auth().signOut();
-                    throw new Error("Akun tidak memiliki hak Admin Utama.");
+                if (user.uid === ADMIN_UID) {
+                    isAdmin = true;
+                    isWaliKelas = true;
+                    activeAuthId = user.uid;
+                    activeUserRole = `Admin Utama (${appConfig.picName})`;
+                } else {
+                    const profile = authorized[user.uid];
+                    if (!profile || profile.role !== "bendahara" || profile.active === false) {
+                        await firebase.auth().signOut();
+                        throw new Error("Akun belum diberi hak Bendahara.");
+                    }
+                    isAdmin = true;
+                    isWaliKelas = false;
+                    activeAuthId = user.uid;
+                    activeUserRole = `Bendahara (${profile.name || inputUserId})`;
                 }
-
-                isAdmin = true;
-                activeAuthId = user.uid;
-                isWaliKelas = true;
-                activeUserRole = `Admin Utama (${appConfig.picName})`;
 
                 loginError.classList.add('hidden');
                 closeModal();
                 updateRoleUI();
                 startFirebaseRealtime().catch(()=>{});
             } catch (err) {
-                console.error("Login Firebase gagal:", err);
-                loginError.innerText = "⚠️ Email/password salah atau akun belum diberi hak akses.";
+                console.error("Login pengurus gagal:", err);
+                loginError.innerText = "⚠️ User ID/password salah atau akun belum diberi hak akses.";
                 loginError.classList.remove('hidden');
             }
         }
@@ -948,6 +987,7 @@
             const btnManageTreasurer = document.getElementById('btn-manage-treasurer');
             const btnChangePin = document.getElementById('btn-change-pin');
             const btnSettingsHeader = document.getElementById('btn-settings-header');
+            const btnManageUsers = document.getElementById('btn-manage-users');
 
             if (isAdmin) {
                 roleBadge.className = isWaliKelas 
@@ -1796,10 +1836,21 @@
   const FIREBASE_API_KEY = "AIzaSyBM1RjOUue6oT3-Gr2sKXo4AEaU1q1D6iA";
   const FIREBASE_PROJECT_ID = "kas-ekstrakurikuler";
   const FIREBASE_AUTH_DOMAIN = FIREBASE_PROJECT_ID + ".firebaseapp.com";
-  // Akun pengurus dibuat di Firebase Authentication > Users dengan provider Email/Password.
-  // Hak Admin Utama ditentukan oleh UID Firebase di bawah ini.
+  // Admin Utama tetap memakai akun Firebase Email/Password.
+  // User Bendahara dibuat dari aplikasi memakai User ID + Password,
+  // lalu dipetakan ke email teknis internal Firebase.
   const ADMIN_UID = "oBJx0ufyC5cOJcWFkuvVvkFutSr1";
   const PUBLIC_READ_ONLY = true;
+  const AUTHORIZED_USERS_KEY = "kas_ekskul_authorized_users";
+  const USER_EMAIL_DOMAIN = "kas-ekstrakurikuler.firebaseapp.com";
+
+  // User ID Bendahara dipetakan ke email teknis internal Firebase.
+  // Pengguna tetap hanya melihat User ID, bukan email teknis ini.
+  function userIdToFirebaseEmail(userId) {
+    const clean = String(userId || "").trim().toUpperCase().replace(/[^A-Z0-9._-]/g, "");
+    if (!clean) throw new Error("User ID kosong.");
+    return clean.toLowerCase() + "@" + USER_EMAIL_DOMAIN;
+  }
 
   let firebaseUser = null;
   let activeAuthId = "";
@@ -1845,10 +1896,141 @@
     }
   }
 
-  async function loginFirebasePengurus(email, password) {
-    if (!email || !password) throw new Error("Email dan password wajib diisi.");
-    const credential = await firebase.auth().signInWithEmailAndPassword(String(email).trim(), password);
+  async function loginFirebasePengurus(userId, password) {
+    if (!userId || !password) throw new Error("User ID dan password wajib diisi.");
+    const email = userIdToFirebaseEmail(userId);
+    const credential = await firebase.auth().signInWithEmailAndPassword(email, password);
     return credential.user;
+  }
+
+  async function getAuthorizedUsers() {
+    try {
+      const response = await fetch(FIREBASE_URL.replace(".json", "/" + AUTHORIZED_USERS_KEY + ".json"), {cache:"no-store"});
+      if (!response.ok) throw new Error("HTTP " + response.status);
+      const data = await response.json();
+      return (data && typeof data === "object") ? data : {};
+    } catch (e) {
+      console.warn("Gagal membaca daftar user:", e);
+      return {};
+    }
+  }
+
+  async function saveAuthorizedUser(uid, profile) {
+    const url = await getFirebaseAuthedUrl(FIREBASE_URL.replace(".json", "/" + AUTHORIZED_USERS_KEY + "/" + encodeURIComponent(uid) + ".json"));
+    const response = await fetch(url, {
+      method:"PUT",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify(profile)
+    });
+    if (!response.ok) throw new Error("HTTP " + response.status);
+  }
+
+  async function createBendaharaUser() {
+    if (!isWaliKelas || !firebase.auth().currentUser) {
+      alert("Hanya Admin Utama yang dapat membuat User Bendahara.");
+      return;
+    }
+    const userId = document.getElementById("new-user-id").value.trim().toUpperCase();
+    const name = document.getElementById("new-user-name").value.trim();
+    const password = document.getElementById("new-user-password").value;
+    const msg = document.getElementById("user-manager-msg");
+
+    if (!/^[A-Z0-9._-]{3,30}$/.test(userId)) {
+      msg.innerText = "⚠️ User ID 3-30 karakter: huruf, angka, titik, garis bawah, atau strip.";
+      msg.className = "text-xs text-amber-600 text-center font-bold";
+      msg.classList.remove("hidden");
+      return;
+    }
+    if (!name) {
+      msg.innerText = "⚠️ Nama Bendahara wajib diisi.";
+      msg.className = "text-xs text-amber-600 text-center font-bold";
+      msg.classList.remove("hidden");
+      return;
+    }
+    if (password.length < 6) {
+      msg.innerText = "⚠️ Password minimal 6 karakter.";
+      msg.className = "text-xs text-amber-600 text-center font-bold";
+      msg.classList.remove("hidden");
+      return;
+    }
+
+    const secondaryName = "secondary-" + Date.now();
+    let secondaryApp = null;
+    try {
+      const config = firebase.app().options;
+      secondaryApp = firebase.initializeApp(config, secondaryName);
+      const cred = await secondaryApp.auth().createUserWithEmailAndPassword(userIdToFirebaseEmail(userId), password);
+      await saveAuthorizedUser(cred.user.uid, {
+        userId,
+        name,
+        role: "bendahara",
+        active: true,
+        createdAt: new Date().toISOString()
+      });
+      msg.innerText = "✅ User Bendahara berhasil dibuat dan diberi hak akses.";
+      msg.className = "text-xs text-emerald-600 text-center font-bold";
+      msg.classList.remove("hidden");
+      document.getElementById("new-user-id").value = "";
+      document.getElementById("new-user-name").value = "";
+      document.getElementById("new-user-password").value = "";
+      await renderUserManagerList();
+    } catch (e) {
+      console.error(e);
+      msg.innerText = "❌ Gagal membuat user: " + (e.message || e);
+      msg.className = "text-xs text-rose-600 text-center font-bold";
+      msg.classList.remove("hidden");
+    } finally {
+      if (secondaryApp) {
+        try { await secondaryApp.auth().signOut(); } catch (_) {}
+        try { await secondaryApp.delete(); } catch (_) {}
+      }
+    }
+  }
+
+  async function renderUserManagerList() {
+    const list = document.getElementById("user-manager-list");
+    if (!list) return;
+    const users = await getAuthorizedUsers();
+    const entries = Object.entries(users).filter(([uid, p]) => p && p.role === "bendahara");
+    if (!entries.length) {
+      list.innerHTML = '<div class="p-3 text-xs text-slate-400 text-center">Belum ada User Bendahara.</div>';
+      return;
+    }
+    list.innerHTML = entries.map(([uid,p]) => `
+      <div class="p-3 flex items-center justify-between gap-2">
+        <div>
+          <div class="text-xs font-bold text-slate-700">${String(p.userId||"")}</div>
+          <div class="text-[11px] text-slate-500">${String(p.name||"")}</div>
+        </div>
+        <button onclick="deactivateBendaharaUser('${uid}')" class="text-[11px] bg-rose-50 text-rose-700 font-bold px-2 py-1 rounded">
+          ${p.active === false ? "Aktifkan" : "Nonaktifkan"}
+        </button>
+      </div>`).join("");
+  }
+
+  async function deactivateBendaharaUser(uid) {
+    if (!isWaliKelas) return;
+    try {
+      const users = await getAuthorizedUsers();
+      const p = users[uid];
+      if (!p) return;
+      p.active = p.active === false;
+      await saveAuthorizedUser(uid, p);
+      await renderUserManagerList();
+    } catch (e) {
+      alert("Gagal mengubah status user: " + (e.message || e));
+    }
+  }
+
+  function openManageUsersModal() {
+    if (!isWaliKelas) return;
+    document.getElementById("manage-users-modal").classList.remove("hidden");
+    document.getElementById("user-manager-msg").classList.add("hidden");
+    renderUserManagerList();
+  }
+
+  function closeManageUsersModal() {
+    document.getElementById("manage-users-modal").classList.add("hidden");
   }
 
   async function getFirebaseAuthedUrl(baseUrl = FIREBASE_URL) {
