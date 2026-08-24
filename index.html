@@ -457,19 +457,19 @@
                     <i class="fas fa-user-shield"></i>
                 </div>
                 <h3 class="text-lg font-display font-semibold text-slate-800">Verifikasi Pengurus</h3>
-                <p class="text-xs text-slate-500 mt-1">Masukkan ID Admin Utama / NIS Bendahara & PIN Rahasia.</p>
+                <p class="text-xs text-slate-500 mt-1">Masukkan email akun pengurus dan password Firebase.</p>
             </div>
             <div class="space-y-3">
                 <div>
-                    <label class="block text-xs font-semibold text-slate-600 mb-1">ID Admin / NIS Pengurus</label>
-                    <input type="text" id="id-input" placeholder="Masukkan ID Admin / NIS Bendahara" class="w-full border border-slate-300 rounded-lg p-2.5 text-center text-sm font-semibold focus:ring-2 focus:ring-amber-500 outline-none">
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Email Akun Pengurus</label>
+                    <input type="text" id="id-input" placeholder="Masukkan email akun Firebase" class="w-full border border-slate-300 rounded-lg p-2.5 text-center text-sm font-semibold focus:ring-2 focus:ring-amber-500 outline-none">
                 </div>
                 <div>
-                    <label class="block text-xs font-semibold text-slate-600 mb-1">PIN Rahasia</label>
-                    <input type="password" id="pin-input" placeholder="Masukkan PIN" class="w-full border border-slate-300 rounded-lg p-2.5 text-center text-lg tracking-widest font-mono focus:ring-2 focus:ring-amber-500 outline-none">
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Password Firebase</label>
+                    <input type="password" id="pin-input" placeholder="Masukkan password" class="w-full border border-slate-300 rounded-lg p-2.5 text-center text-lg tracking-widest font-mono focus:ring-2 focus:ring-amber-500 outline-none">
                 </div>
-                <p id="login-error" class="text-xs text-rose-600 hidden text-center font-bold">⚠️ ID/NIS atau PIN tidak valid!</p>
-                <p class="text-[11px] text-slate-400 text-center">Baru pertama kali pakai? Login dengan ID <b>000000000</b> & PIN <b>1234</b>, lalu buka menu <b>Pengaturan</b> untuk mengganti judul kegiatan, nama admin, ID, dan PIN.</p>
+                <p id="login-error" class="text-xs text-rose-600 hidden text-center font-bold">⚠️ Email/password tidak valid atau akun belum diberi hak akses!</p>
+                <p class="text-[11px] text-slate-400 text-center">Akun pengurus harus dibuat terlebih dahulu di Firebase Authentication > Users. Hak akses ditentukan oleh UID Firebase, bukan oleh JavaScript di halaman.</p>
             </div>
             <div class="flex gap-2">
                 <button onclick="closeModal()" class="w-1/2 bg-slate-100 hover:bg-slate-200 text-slate-600 font-semibold py-2 rounded-lg text-sm">Batal</button>
@@ -506,8 +506,8 @@
                 <div class="bg-amber-100 text-amber-600 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-2 text-xl">
                     <i class="fas fa-key"></i>
                 </div>
-                <h3 class="text-lg font-display font-semibold text-slate-800">Ganti PIN Utama</h3>
-                <p class="text-xs text-slate-500 mt-1">Masukkan PIN lama Anda, lalu buat PIN baru.</p>
+                <h3 class="text-lg font-display font-semibold text-slate-800">Ganti PIN / Password</h3>
+                <p class="text-xs text-slate-500 mt-1">Perubahan ini mengubah password akun Firebase pengurus yang sedang login.</p>
             </div>
             <div class="space-y-3">
                 <div>
@@ -535,7 +535,7 @@
                     <i class="fas fa-gear"></i>
                 </div>
                 <h3 class="text-lg font-display font-semibold text-slate-800">Pengaturan Kegiatan</h3>
-                <p class="text-xs text-slate-500 mt-1">Sesuaikan judul, penanggung jawab, nominal iuran, ID Admin & PIN. Bisa dipakai ulang untuk kegiatan/ekstrakurikuler lain.</p>
+                <p class="text-xs text-slate-500 mt-1">Sesuaikan judul, penanggung jawab, nominal iuran, dan ID Admin. Password/PIN dikelola melalui menu Ganti PIN.</p>
             </div>
             <div class="space-y-3">
                 <div>
@@ -561,7 +561,7 @@
                     </div>
                 </div>
                 <div class="border-t border-slate-200 pt-3">
-                    <label class="block text-xs font-semibold text-slate-600 mb-1">PIN Baru <span class="font-normal text-slate-400">(kosongkan jika tidak diganti)</span></label>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">PIN Baru <span class="font-normal text-slate-400">(minimal 6 karakter)</span></label>
                     <input type="password" id="cfg-new-pin" placeholder="Minimal 4 karakter" class="w-full border border-slate-300 rounded-lg p-2.5 text-center text-lg tracking-widest font-mono focus:ring-2 focus:ring-teal-500 outline-none">
                 </div>
                 <p id="settings-msg" class="text-xs hidden text-center font-bold"></p>
@@ -637,7 +637,8 @@
         let storedData = localStorage.getItem('kas_ekskul_data');
         let transactions = storedData ? JSON.parse(storedData) : defaultTransactions;
 
-        let currentPin = localStorage.getItem('kas_ekskul_pin') || "1234";
+        // PIN/password sekarang dikelola Firebase Authentication, bukan localStorage/database.
+        let currentPin = "";
         let isAdmin = false;
         let isWaliKelas = false;
         let activeUserRole = "";
@@ -722,6 +723,8 @@
                 isAdmin = false;
                 isWaliKelas = false;
                 activeUserRole = "";
+                activeAuthId = "";
+                if (firebase.auth().currentUser) firebase.auth().signOut().catch(()=>{});
                 updateRoleUI();
             } else {
                 document.getElementById('login-modal').classList.remove('hidden');
@@ -737,30 +740,33 @@
             document.getElementById('login-error').classList.add('hidden');
         }
 
-        function verifyPin() {
-            const inputID = document.getElementById('id-input').value.trim();
-            const inputPin = document.getElementById('pin-input').value.trim();
+        async function verifyPin() {
+            const inputEmail = document.getElementById('id-input').value.trim();
+            const inputPassword = document.getElementById('pin-input').value;
             const loginError = document.getElementById('login-error');
 
-            const isWali = (inputID === appConfig.picId);
-            const isTreasurer = activeTreasurers.includes(inputID);
-            const isPinValid = (inputPin === currentPin);
+            try {
+                const user = await loginFirebasePengurus(inputEmail, inputPassword);
 
-            if ((isWali || isTreasurer) && isPinValid) {
-                isAdmin = true;
-                if (isWali) {
-                    isWaliKelas = true;
-                    activeUserRole = `Admin Utama (${appConfig.picName})`;
-                } else {
-                    isWaliKelas = false;
-                    const student = masterStudents.find(s => s.nis === inputID);
-                    activeUserRole = student ? `Bendahara (${student.name})` : "Bendahara";
+                // Keputusan hak akses utama dibuat berdasarkan UID Firebase,
+                // bukan variabel JavaScript yang bisa diubah melalui Inspect.
+                if (!user || user.uid !== ADMIN_UID) {
+                    await firebase.auth().signOut();
+                    throw new Error("Akun tidak memiliki hak Admin Utama.");
                 }
+
+                isAdmin = true;
+                activeAuthId = user.uid;
+                isWaliKelas = true;
+                activeUserRole = `Admin Utama (${appConfig.picName})`;
 
                 loginError.classList.add('hidden');
                 closeModal();
                 updateRoleUI();
-            } else {
+                startFirebaseRealtime().catch(()=>{});
+            } catch (err) {
+                console.error("Login Firebase gagal:", err);
+                loginError.innerText = "⚠️ Email/password salah atau akun belum diberi hak akses.";
                 loginError.classList.remove('hidden');
             }
         }
@@ -819,38 +825,40 @@
             document.getElementById('change-pin-modal').classList.add('hidden');
         }
 
-        function saveNewPin() {
+        async function saveNewPin() {
             const oldPin = document.getElementById('old-pin-input').value.trim();
             const newPin = document.getElementById('new-pin-input').value.trim();
             const msg = document.getElementById('change-pin-msg');
 
-            if (oldPin !== currentPin) {
-                msg.innerText = "❌ PIN Lama Salah!";
+            if (!firebase.auth().currentUser || !isAdmin) {
+                msg.innerText = "❌ Anda belum login sebagai pengurus.";
                 msg.className = "text-xs text-rose-600 text-center font-bold";
                 msg.classList.remove('hidden');
                 return;
             }
-
-            if (newPin.length < 4) {
-                msg.innerText = "⚠️ PIN Minimal 4 Karakter!";
+            if (newPin.length < 6) {
+                msg.innerText = "⚠️ Password/PIN Firebase minimal 6 karakter.";
                 msg.className = "text-xs text-amber-600 text-center font-bold";
                 msg.classList.remove('hidden');
                 return;
             }
 
-            currentPin = newPin;
-            localStorage.setItem('kas_ekskul_pin', currentPin);
-            if (typeof simpanPinKeFirebase === 'function') {
-                simpanPinKeFirebase();
+            try {
+                const user = firebase.auth().currentUser;
+                const credential = firebase.auth.EmailAuthProvider.credential(user.email, oldPin);
+                // Re-authentikasi memakai email akun Firebase yang sedang login.
+                await user.reauthenticateWithCredential(credential);
+                await user.updatePassword(newPin);
+                msg.innerText = "✅ PIN/Password Firebase berhasil diperbarui!";
+                msg.className = "text-xs text-emerald-600 text-center font-bold";
+                msg.classList.remove('hidden');
+                setTimeout(() => closeChangePinModal(), 1200);
+            } catch (err) {
+                console.error(err);
+                msg.innerText = "❌ PIN lama salah atau Firebase menolak perubahan password.";
+                msg.className = "text-xs text-rose-600 text-center font-bold";
+                msg.classList.remove('hidden');
             }
-
-            msg.innerText = "✅ PIN Berhasil Diperbarui!";
-            msg.className = "text-xs text-emerald-600 text-center font-bold";
-            msg.classList.remove('hidden');
-
-            setTimeout(() => {
-                closeChangePinModal();
-            }, 1200);
         }
 
         // ===== PENGATURAN KEGIATAN (Judul, Organisasi, Penanggung Jawab, ID Admin, PIN, Nominal Iuran) =====
@@ -908,9 +916,9 @@
             saveAppConfigLocal();
 
             if (newPin) {
-                currentPin = newPin;
-                localStorage.setItem('kas_ekskul_pin', currentPin);
-                if (typeof simpanPinKeFirebase === 'function') simpanPinKeFirebase();
+                msg.innerText = "⚠️ Untuk keamanan, PIN/Password diganti melalui menu Ganti PIN setelah login.";
+                msg.className = "text-xs text-amber-600 text-center font-bold";
+                msg.classList.remove('hidden');
             }
 
             // Perbarui peran admin yang sedang login jika ID Admin berubah
@@ -1315,15 +1323,10 @@
 
         // Inisialisasi Aplikasi Saat Halaman Dimuat
         window.onload = async function() {
-            // Tunggu autentikasi Firebase agar perangkat lain dapat membaca database
-            // yang dilindungi Rules: auth != null.
-            if (typeof firebaseAuthReady !== 'undefined') {
-                await firebaseAuthReady;
-            }
-
-            // Firebase menjadi sumber data utama saat aplikasi dibuka.
-            if (typeof muatDataDariFirebase === 'function') {
-                await muatDataDariFirebase();
+            // Data publik dibaca tanpa memaksa login pengurus.
+            // Hak tulis tetap diperiksa oleh Firebase Security Rules.
+            if (typeof muatDataPublikDariFirebase === 'function') {
+                await muatDataPublikDariFirebase();
             }
 
             applyBranding();
@@ -1785,17 +1788,21 @@
 <!-- Script Firebase Kas Kelas 8E (Sinkronisasi Aman & Terarah) -->
 <script>
   // ================================================================
-  // FIREBASE AUTH: LOGIN ANONIM OTOMATIS
+  // FIREBASE AUTH: LOGIN PUBLIK READ-ONLY + LOGIN PENGURUS SECURE
   // ================================================================
   // CATATAN: Ganti nilai FIREBASE_API_KEY dengan Web API Key dari
   // Firebase Console > Project settings > General > Your apps > Config.
-  // Anonymous Authentication juga harus diaktifkan di:
-  // Authentication > Sign-in method > Anonymous > Enable.
+  // Anonymous Authentication TIDAK digunakan pada versi aman ini.
   const FIREBASE_API_KEY = "AIzaSyBM1RjOUue6oT3-Gr2sKXo4AEaU1q1D6iA";
   const FIREBASE_PROJECT_ID = "kas-ekstrakurikuler";
   const FIREBASE_AUTH_DOMAIN = FIREBASE_PROJECT_ID + ".firebaseapp.com";
+  // Akun pengurus dibuat di Firebase Authentication > Users dengan provider Email/Password.
+  // Hak Admin Utama ditentukan oleh UID Firebase di bawah ini.
+  const ADMIN_UID = "oBJx0ufyC5cOJcWFkuvVvkFutSr1";
+  const PUBLIC_READ_ONLY = true;
 
   let firebaseUser = null;
+  let activeAuthId = "";
   let firebaseAuthReadyResolve;
   let firebaseAuthReadyReject;
   const firebaseAuthReady = new Promise((resolve, reject) => {
@@ -1818,40 +1825,39 @@
         });
       }
 
-      firebase.auth().onAuthStateChanged(async (user) => {
+      firebase.auth().onAuthStateChanged((user) => {
+        firebaseUser = user || null;
         if (user) {
-          firebaseUser = user;
           firebaseAuthReadyResolve(user);
           console.log("Firebase Auth siap:", user.uid);
         }
       });
 
-      if (!firebase.auth().currentUser) {
-        await firebase.auth().signInAnonymously();
+      // PENTING: jangan lagi signInAnonymously() otomatis.
+      // Pengunjung tidak mendapatkan hak write hanya karena membuka halaman.
+      if (firebase.auth().currentUser) {
+        firebaseUser = firebase.auth().currentUser;
+        firebaseAuthReadyResolve(firebaseUser);
       }
     } catch (err) {
       console.error("Firebase Auth gagal:", err);
       firebaseAuthReadyReject(err);
-      alert("Koneksi database belum siap. Pastikan Anonymous Authentication Firebase sudah diaktifkan dan Web API Key sudah benar.");
     }
   }
 
+  async function loginFirebasePengurus(email, password) {
+    if (!email || !password) throw new Error("Email dan password wajib diisi.");
+    const credential = await firebase.auth().signInWithEmailAndPassword(String(email).trim(), password);
+    return credential.user;
+  }
+
   async function getFirebaseAuthedUrl(baseUrl = FIREBASE_URL) {
-    try {
-      if (!firebase.auth().currentUser) {
-        await firebase.auth().signInAnonymously();
-      }
-      if (!firebase.auth().currentUser) {
-        await firebaseAuthReady;
-      }
-      const user = firebase.auth().currentUser;
-      if (!user) throw new Error("Firebase Auth belum menghasilkan pengguna anonim.");
-      const token = await user.getIdToken(true);
-      return baseUrl + (baseUrl.includes("?") ? "&" : "?") + "auth=" + encodeURIComponent(token);
-    } catch (err) {
-      console.error("Gagal mendapatkan token Firebase:", err);
-      throw err;
+    const user = firebase.auth().currentUser;
+    if (!user) {
+      throw new Error("Belum login sebagai pengurus. Akses publik hanya dapat membaca data.");
     }
+    const token = await user.getIdToken(true);
+    return baseUrl + (baseUrl.includes("?") ? "&" : "?") + "auth=" + encodeURIComponent(token);
   }
 
   initFirebaseAuth();
@@ -1862,7 +1868,6 @@
   const FIREBASE_KEYS = {
     data: "kas_ekskul_data",
     treasurers: "kas_ekskul_treasurers",
-    pin: "kas_ekskul_pin",
     config: "kas_ekskul_config"
   };
 
@@ -1897,68 +1902,25 @@
     return JSON.stringify(value);
   }
 
-  async function muatDataDariFirebase() {
+  async function muatDataPublikDariFirebase() {
     try {
-      const url = await getFirebaseAuthedUrl();
-      const response = await fetch(url, { cache: "no-store" });
+      const response = await fetch(FIREBASE_URL, { cache: "no-store" });
       if (!response.ok) throw new Error("HTTP " + response.status);
-
       const dataFirebase = await response.json();
-
-      if (dataFirebase && typeof dataFirebase === "object") {
-        if (Object.prototype.hasOwnProperty.call(dataFirebase, FIREBASE_KEYS.data)) {
-          const cloudData = Array.isArray(dataFirebase[FIREBASE_KEYS.data])
-            ? dataFirebase[FIREBASE_KEYS.data] : [];
-          localStorage.setItem(FIREBASE_KEYS.data, jsonStringifySafe(cloudData));
-          transactions = cloudData;
-        }
-
-        if (Object.prototype.hasOwnProperty.call(dataFirebase, FIREBASE_KEYS.treasurers)) {
-          const cloudTreasurers = Array.isArray(dataFirebase[FIREBASE_KEYS.treasurers])
-            ? dataFirebase[FIREBASE_KEYS.treasurers] : [];
-          localStorage.setItem(FIREBASE_KEYS.treasurers, jsonStringifySafe(cloudTreasurers));
-          activeTreasurers = cloudTreasurers;
-        }
-
-        if (Object.prototype.hasOwnProperty.call(dataFirebase, FIREBASE_KEYS.pin)) {
-          const cloudPin = String(dataFirebase[FIREBASE_KEYS.pin] ?? "");
-          if (cloudPin) {
-            localStorage.setItem(FIREBASE_KEYS.pin, cloudPin);
-            currentPin = cloudPin;
-          }
-        }
-
-        if (Object.prototype.hasOwnProperty.call(dataFirebase, FIREBASE_KEYS.config)) {
-          const cloudConfig = dataFirebase[FIREBASE_KEYS.config];
-          if (cloudConfig && typeof cloudConfig === "object") {
-            appConfig = Object.assign({}, DEFAULT_APP_CONFIG, cloudConfig);
-            localStorage.setItem(FIREBASE_KEYS.config, jsonStringifySafe(appConfig));
-            if (typeof applyBranding === "function") applyBranding();
-          }
-        }
-      }
-
-      if (Object.prototype.hasOwnProperty.call(dataFirebase, FIREBASE_STUDENT_KEY)) {
-        const cloudStudents = Array.isArray(dataFirebase[FIREBASE_STUDENT_KEY]) ? dataFirebase[FIREBASE_STUDENT_KEY] : [];
-        if (cloudStudents.length) {
-          activeStudents = cloudStudents.filter(s=>s && String(s.name||"").trim())
-            .map(s=>({nis:String(s.nis||"-"),name:String(s.name).trim()}));
-          localStorage.setItem(STUDENT_KEY, JSON.stringify(activeStudents));
-          syncActiveStudentsToMaster();
-        }
-      }
-
-      if (Object.prototype.hasOwnProperty.call(dataFirebase, FIREBASE_ARCHIVE_KEY)) {
-        const cloudArchives = Array.isArray(dataFirebase[FIREBASE_ARCHIVE_KEY]) ? dataFirebase[FIREBASE_ARCHIVE_KEY] : [];
-        localStorage.setItem(ARCHIVE_KEY, JSON.stringify(cloudArchives));
-      }
-
+      if (!dataFirebase || typeof dataFirebase !== "object") return;
+      if (Array.isArray(dataFirebase[FIREBASE_KEYS.data])) { transactions = dataFirebase[FIREBASE_KEYS.data]; localStorage.setItem(FIREBASE_KEYS.data, JSON.stringify(transactions)); }
+      if (Array.isArray(dataFirebase[FIREBASE_KEYS.treasurers])) { activeTreasurers = dataFirebase[FIREBASE_KEYS.treasurers]; localStorage.setItem(FIREBASE_KEYS.treasurers, JSON.stringify(activeTreasurers)); }
+      if (dataFirebase[FIREBASE_KEYS.config] && typeof dataFirebase[FIREBASE_KEYS.config] === "object") { appConfig = Object.assign({}, DEFAULT_APP_CONFIG, dataFirebase[FIREBASE_KEYS.config]); localStorage.setItem(FIREBASE_KEYS.config, JSON.stringify(appConfig)); }
+      if (Array.isArray(dataFirebase[FIREBASE_STUDENT_KEY])) { activeStudents = dataFirebase[FIREBASE_STUDENT_KEY].filter(s=>s && String(s.name||"").trim()).map(s=>({nis:String(s.nis||"-"),name:String(s.name).trim()})); localStorage.setItem(STUDENT_KEY, JSON.stringify(activeStudents)); syncActiveStudentsToMaster(); }
+      if (Array.isArray(dataFirebase[FIREBASE_ARCHIVE_KEY])) localStorage.setItem(ARCHIVE_KEY, JSON.stringify(dataFirebase[FIREBASE_ARCHIVE_KEY]));
       firebaseReady = true;
-      console.log("Firebase siap. Data cloud dimuat.");
-    } catch (err) {
-      firebaseReady = false;
-      console.error("Gagal mengambil data dari Firebase. Aplikasi menggunakan data lokal:", err);
-    }
+    } catch (err) { console.warn("Data publik belum dapat dibaca dari Firebase:", err); firebaseReady = false; }
+  }
+
+  async function muatDataDariFirebase() {
+    // Pengurus yang sudah login dapat memakai pembacaan yang sama;
+    // fungsi ini dipertahankan agar kompatibel dengan kode lama.
+    return await muatDataPublikDariFirebase();
   }
 
   async function simpanDataKeFirebase() {
@@ -2001,18 +1963,6 @@
       });
       if (!response.ok) throw new Error("HTTP " + response.status);
     } catch (err) { console.error("Gagal menyimpan bendahara ke Firebase:", err); }
-  }
-
-  async function simpanPinKeFirebase() {
-    try {
-      const url = await getFirebaseAuthedUrl();
-      const response = await fetch(url, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({[FIREBASE_KEYS.pin]: currentPin})
-      });
-      if (!response.ok) throw new Error("HTTP " + response.status);
-    } catch (err) { console.error("Gagal menyimpan PIN ke Firebase:", err); }
   }
 
   async function simpanConfigKeFirebase() {
@@ -2058,14 +2008,7 @@
               activeTreasurers = cloudTreasurers; changed = true;
             }
           }
-
-          if (Object.prototype.hasOwnProperty.call(data, FIREBASE_KEYS.pin)) {
-            const cloudPin = String(data[FIREBASE_KEYS.pin] ?? "");
-            if (cloudPin && localStorage.getItem(FIREBASE_KEYS.pin) !== cloudPin) {
-              localStorage.setItem(FIREBASE_KEYS.pin, cloudPin); currentPin = cloudPin;
-            }
-          }
-
+        
           if (Object.prototype.hasOwnProperty.call(data, FIREBASE_KEYS.config)) {
             const cloudConfig = data[FIREBASE_KEYS.config];
             if (cloudConfig && typeof cloudConfig === "object") {
@@ -2109,7 +2052,7 @@
     } catch (err) { console.error("Gagal memulai realtime Firebase:", err); }
   }
 
-  firebaseAuthReady.then(() => startFirebaseRealtime()).catch(()=>{});
+  // Realtime untuk pengurus saja; tidak ada anonymous write session.
 </script>
 
 </body>
