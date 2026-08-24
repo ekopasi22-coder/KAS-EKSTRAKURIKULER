@@ -1003,10 +1003,12 @@
 
                 if (isWaliKelas) {
                     btnManageTreasurer.classList.remove('hidden');
+                    btnManageUsers.classList.remove('hidden');
                     btnSettingsHeader.classList.remove('hidden');
                     btnSettingsHeader.classList.add('flex');
                 } else {
                     btnManageTreasurer.classList.add('hidden');
+                    btnManageUsers.classList.add('hidden');
                     btnSettingsHeader.classList.add('hidden');
                     btnSettingsHeader.classList.remove('flex');
                 }
@@ -1022,6 +1024,7 @@
 
                 adminForm.classList.add('hidden');
                 btnManageTreasurer.classList.add('hidden');
+                btnManageUsers.classList.add('hidden');
                 btnChangePin.classList.add('hidden');
                 btnSettingsHeader.classList.add('hidden');
                 btnSettingsHeader.classList.remove('flex');
